@@ -74,9 +74,9 @@ const displayMovements = function (movements) {
 		containerMovements.insertAdjacentHTML('afterbegin', html);
 	});
 };
-const calcDisplayBalance = function (movements) {
-	const balance = movements.reduce((acc, mov) => acc + mov, 0);
-	labelBalance.textContent = `${balance}€`;
+const calcDisplayBalance = function (acc) {
+	acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
+	labelBalance.textContent = `${acc.balance}€`;
 };
 
 const calcDisplaySummary = function (acc) {
@@ -109,11 +109,18 @@ const createUsernames = function (accs) {
 			.join('');
 	});
 };
-
+const updateUI = (acc) => {
+	displayMovements(acc.movements);
+	//display balance
+	calcDisplayBalance(acc);
+	//display summary
+	calcDisplaySummary(acc);
+};
 createUsernames(accounts);
 
 //event handlers
 let currentAccount;
+
 btnLogin.addEventListener('click', function (event) {
 	event.preventDefault();
 	currentAccount = accounts.find(
@@ -131,14 +138,45 @@ btnLogin.addEventListener('click', function (event) {
 		inputLoginUsername.value = inputLoginPin.value = '';
 
 		inputLoginPin.blur();
-		displayMovements(currentAccount.movements);
-		//display balance
-		calcDisplayBalance(currentAccount.movements);
-		//display summary
-		calcDisplaySummary(currentAccount);
+
+		updateUI(currentAccount);
 	}
 });
 
+btnTransfer.addEventListener('click', function (event) {
+	event.preventDefault();
+	const amount = +inputTransferAmount.value;
+	const reciveAcc = accounts.find(
+		(acc) => acc.username === inputTransferTo.value,
+	);
+	inputTransferAmount.value = inputTransferTo.value = '';
+	if (
+		amount > 0 &&
+		reciveAcc &&
+		currentAccount.balance >= amount &&
+		reciveAcc?.username !== currentAccount.username
+	) {
+		currentAccount.movements.push(-amount);
+		reciveAcc.movements.push(amount);
+
+		updateUI(currentAccount);
+	}
+});
+
+btnClose.addEventListener('click', function (e) {
+	e.preventDefault();
+
+	if (
+		currentAccount?.username === inputCloseUsername.value &&
+		currentAccount.pin === +inputClosePin.value
+	) {
+		const index = accounts.findIndex(
+			(acc) => acc.username === currentAccount.username,
+		);
+		accounts.splice(index, 1);
+		containerApp.style.opacity = 0;
+	}
+});
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
